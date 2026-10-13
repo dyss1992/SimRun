@@ -54,8 +54,9 @@ Other versions may or may not work.
 Each [release](https://github.com/unixzii/SimRun/releases) has a `SimRun-<version>.zip` with a ready-built
 `SimRun.app`. Download it, unzip it, and move `SimRun.app` to your Applications folder.
 
-The download isn't notarized by Apple, so macOS refuses to open it at first. Clear the quarantine flag
-it puts on downloaded files once, after moving the app:
+New releases built with the [signed release workflow](docs/releasing.md) are Developer ID signed and notarized.
+Older downloads aren't notarized, so macOS may refuse to open them at first. For those older downloads, clear the
+quarantine flag once, after moving the app:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/SimRun.app

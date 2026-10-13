@@ -5,6 +5,7 @@ Start here:
 - [architecture.md](architecture.md) — how SimRun runs a Simulator app without the Simulator: the server, the
   launchd_sim stand-in, the injected libraries, data containers, source layout and building
 - [reference.md](reference.md) — scripts, environment variables, keyboard shortcuts and known gaps
+- [releasing.md](releasing.md) — Developer ID signing, notarization, CI secrets and release diagnostics
 
 Write-ups of each part:
 
