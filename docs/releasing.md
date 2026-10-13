@@ -5,8 +5,8 @@ signature/Gatekeeper validation, then publication of the final zip. A failure st
 continues to use ad-hoc signing.
 
 Same-repository PRs that change the release workflow/scripts/entitlements run the same pipeline, as do manual
-workflow runs. These save the signed, stapled zip as an Actions artifact without publishing a GitHub Release.
-Fork PRs are skipped. Only a pushed tag can publish a Release.
+workflow runs. These save the signed, stapled zip as an Actions artifact, kept for 7 days, without publishing a
+GitHub Release. Fork PRs are skipped. Only a pushed tag can publish a Release.
 
 The repository needs these Actions secrets:
 

@@ -64,6 +64,8 @@ jobs:
           name: signed-app-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.RELEASE_ARCHIVE }}
           if-no-files-found: error
+          # PR and manual runs sign unreleased code; don't keep those builds around.
+          retention-days: ${{ github.ref_type == 'tag' && 90 || 7 }}
 
       - name: Save notarization diagnostics
         if: always()
