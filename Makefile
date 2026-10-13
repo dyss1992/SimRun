@@ -93,7 +93,7 @@ $(ICON)/Assets.car: $(ICON_INPUTS)
 	xcrun actool $(ICON_DOC) --compile $(ICON) --platform macosx --minimum-deployment-target 14.0 --app-icon AppIcon \
 	  --output-partial-info-plist $(ICON)/partial.plist >/dev/null
 
-# SimRun.app: the server/launcher executable, helpers (simns, simrun), the sim-side libraries and the agent skill.
+# SimRun.app: the server/launcher executable, the simrun helper, simns, the sim-side libraries and the agent skill.
 # Assembled in a staging bundle and swapped in with a rename, so a SimRun that is running from the old bundle keeps
 # its (unlinked) files instead of having them overwritten underneath it.
 SKILL_FILES := $(shell find skills -type f ! -name .DS_Store)
