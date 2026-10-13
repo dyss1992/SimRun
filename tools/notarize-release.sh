@@ -66,7 +66,13 @@ PY
 xcrun stapler staple "$APP"
 xcrun stapler validate "$APP"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP"
-/usr/sbin/spctl --assess --type execute --verbose=2 "$APP"
+if ! /usr/sbin/spctl --assess --type execute --verbose=4 "$APP"; then
+    # Keep the exact rejected bundle and a more specific system-policy diagnosis.
+    /usr/bin/syspolicy_check distribution --verbose "$APP" > "$LOG_DIR/gatekeeper.txt" 2>&1 || true
+    cat "$LOG_DIR/gatekeeper.txt"
+    /usr/bin/ditto -c -k --keepParent "$APP" "$LOG_DIR/rejected-app.zip"
+    exit 1
+fi
 # The distributed zip must contain the stapled app, not the submission archive.
 rm -f "$OUTPUT"
 /usr/bin/ditto -c -k --keepParent "$APP" "$OUTPUT"
