@@ -103,7 +103,8 @@ $(APP): $(SKILL_FILES) $(PARTS) resources/Info.plist $(ICON)/Assets.car
 	@cp resources/Info.plist $(BUILD)/.SimRun.app.new/Contents/Info.plist
 	@cp $(ICON)/Assets.car $(ICON)/AppIcon.icns $(BUILD)/.SimRun.app.new/Contents/Resources/
 	@cp $(BIN)/simrund $(BUILD)/.SimRun.app.new/Contents/MacOS/SimRun
-	@cp $(BIN)/simns $(BIN)/simrun $(BUILD)/.SimRun.app.new/Contents/Helpers/
+	@cp $(BIN)/simrun $(BUILD)/.SimRun.app.new/Contents/Helpers/
+	@cp $(BIN)/simns $(BUILD)/.SimRun.app.new/Contents/Resources/lib/
 	@cp $(SIMLIBS) $(BUILD)/.SimRun.app.new/Contents/Resources/lib/
 	@rsync -a --exclude .DS_Store skills $(BUILD)/.SimRun.app.new/Contents/Resources/
 	@$(SIGN) --deep $(BUILD)/.SimRun.app.new 2>/dev/null

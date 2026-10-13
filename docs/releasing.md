@@ -30,6 +30,11 @@ the macOS CLI, then the outer app. It verifies every Mach-O's Developer ID signa
 timestamp, including libraries under `Contents/Resources`. New payloads must be added to the signing sequence;
 do not replace this with `codesign --deep` signing.
 
+`simns` resides under `Contents/Resources/lib` with the other Simulator-platform payloads, not under the macOS
+`Contents/Helpers` code location. Apple's notary service excludes Simulator-platform binaries from its ticket;
+classifying `simns` as nested macOS code causes Gatekeeper's deep policy check to reject the outer app even when
+notarization and stapling succeed. It remains explicitly signed and sealed by the outer resource signature.
+
 The host has the audio-input entitlement for microphone access. `simns` has allow-dyld-environment-variables
 because runtime selection depends on `DYLD_ROOT_PATH` and related variables. Injected libraries do not receive
 executable entitlements: they execute under the target app's policy. This workflow does not re-sign users' apps

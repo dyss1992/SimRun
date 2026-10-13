@@ -15,7 +15,7 @@ fi
 for file in xpcservices.dylib app.dylib SimFramebuffer; do
     "${SIGN[@]}" "$APP/Contents/Resources/lib/$file"
 done
-"${SIGN[@]}" --entitlements "$ROOT/resources/release-simns.entitlements" "$APP/Contents/Helpers/simns"
+"${SIGN[@]}" --entitlements "$ROOT/resources/release-simns.entitlements" "$APP/Contents/Resources/lib/simns"
 "${SIGN[@]}" "$APP/Contents/Helpers/simrun"
 "${SIGN[@]}" --entitlements "$ROOT/resources/release-host.entitlements" "$APP"
 
