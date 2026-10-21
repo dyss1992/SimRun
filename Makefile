@@ -22,7 +22,7 @@ HDRS    := $(wildcard include/*.h)
 APP   := $(BUILD)/SimRun.app
 CORE  := $(APP) $(BIN)/simrun
 SIMLIBS := $(LIB)/xpcservices.dylib $(LIB)/app.dylib $(LIB)/SimFramebuffer
-PARTS := $(BIN)/simrund $(BIN)/simrun $(BIN)/simns $(SIMLIBS)
+PARTS := $(BIN)/simrund $(BIN)/simrun $(BIN)/simns $(SIMLIBS) $(BIN)/convert-metallib.py $(BIN)/preserve-simulator-entitlements.py
 TOOLS := $(BIN)/hostinput
 TEST_APPS  := $(APPS)/Hello.app $(APPS)/SUI.app $(APPS)/HIDTest.app $(APPS)/Glass.app $(APPS)/DragTest.app $(APPS)/WebTest.app $(APPS)/BGDownload.app $(APPS)/PickerTest.app $(APPS)/Showcase.app $(APPS)/AudioPlayer.app
 TEST_PROGS := $(TBIN)/nettest $(TBIN)/nwtest $(TBIN)/pbtest $(TBIN)/kctest $(TBIN)/loctest $(TBIN)/mpstest $(TBIN)/audiotest $(TBIN)/motiontest
@@ -106,6 +106,8 @@ $(APP): $(SKILL_FILES) $(PARTS) resources/Info.plist $(ICON)/Assets.car
 	@cp $(BIN)/simrun $(BUILD)/.SimRun.app.new/Contents/Helpers/
 	@cp $(BIN)/simns $(BUILD)/.SimRun.app.new/Contents/Resources/lib/
 	@cp $(SIMLIBS) $(BUILD)/.SimRun.app.new/Contents/Resources/lib/
+	@cp tools/preserve-simulator-entitlements.py $(BUILD)/.SimRun.app.new/Contents/Resources/
+	@cp tools/convert-metallib.py $(BUILD)/.SimRun.app.new/Contents/Resources/
 	@rsync -a --exclude .DS_Store skills $(BUILD)/.SimRun.app.new/Contents/Resources/
 	@$(SIGN) --deep $(BUILD)/.SimRun.app.new 2>/dev/null
 	@if [ -d $@ ]; then mv $@ $(BUILD)/.SimRun.app.old; fi
@@ -114,6 +116,9 @@ $(APP): $(SKILL_FILES) $(PARTS) resources/Info.plist $(ICON)/Assets.car
 
 $(BIN)/simrun: src/host/simrun/simrun.m $(HDRS) | $(BIN)
 	$(MACCC) -Wall $< -framework Foundation -o $@
+
+$(BIN)/convert-metallib.py: tools/convert-metallib.py | $(BIN)
+	cp $< $@
 
 $(BIN)/hostinput: tools/hostinput.swift | $(BIN)
 	$(MACSWIFT) $< -o $@
@@ -250,3 +255,6 @@ install: $(APP)
 
 clean:
 	rm -rf $(BUILD)
+
+$(BIN)/preserve-simulator-entitlements.py: tools/preserve-simulator-entitlements.py | $(BIN)
+	cp $< $@

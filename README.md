@@ -162,7 +162,7 @@ with no apps running.
   Xcode's `Debug-iphoneos` build: add it or `simrun run` it like any other app. SimRun runs a copy converted for the
   Simulator, made in about a second the first time and again whenever the app changes (they are kept in
   `~/Library/Caches/dev.simrun.SimRun/DeviceBuilds`, and can be deleted). App Store builds are encrypted and can't
-  run. A converted app loses its entitlements, so its keychain items go in an access group named after its bundle ID.
+  run. Original entitlement declarations are preserved as Simulator metadata; the host signature remains ad hoc. Apps with Metal libraries require Xcode’s Metal toolchain. See [device builds with Metal](docs/device-build-metal.md).
 - **Manage running apps** with `simrun list`, `simrun quit <app>` and `simrun screenshot <app>`.
 - **Run apps in the background** with `simrun run --headless`: no window, nothing comes to the front, and the app gets
   a clipboard of its own. Run as many as you like side by side (each in its own profile, `-p`), and drive them with

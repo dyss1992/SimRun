@@ -6,7 +6,8 @@
 //   * Info.plists: the platform keys say iphonesimulator
 //   * signatures: the device ones (and the provisioning profile) removed and everything signed again, ad hoc. An edited
 //     Mach-O no longer matches its signature, and the kernel kills a process that maps it. The entitlements go too: an
-//     ad-hoc signature can't carry restricted ones (the keychain module then uses the bundle ID as the access group)
+//     ad-hoc signature cannot carry restricted ones. Original declarations are kept in __TEXT,__entitlements,
+//     as in Xcode Simulator builds, for Simulator frameworks; they grant no host privileges.
 //   * Watch/ (the watchOS companion app) is left out
 // App Store builds are encrypted (FairPlay) and can't be converted.
 #import "devicebuild.h"
@@ -18,7 +19,35 @@
 #include <sys/xattr.h>
 
 // Part of the stamp: a change here converts every app again.
-static const int kConverterVersion = 1;
+static const int kConverterVersion = 3;
+
+// Device AIR loads as an MTLLibrary on Simulator, but pipeline creation rejects
+// its OS target. Retarget the original IR before signing the disposable copy.
+static BOOL RunConversionHelper(NSString *name, NSString *app, NSString **error) {
+  NSString *helper = [NSBundle.mainBundle.resourcePath stringByAppendingPathComponent:name];
+  if (![NSFileManager.defaultManager fileExistsAtPath:helper])
+    helper = [NSBundle.mainBundle.executablePath.stringByDeletingLastPathComponent stringByAppendingPathComponent:name];
+  if (![NSFileManager.defaultManager fileExistsAtPath:helper]) {
+    *error = [NSString stringWithFormat:@"%@ is missing; rebuild SimRun core", name];
+    return NO;
+  }
+  NSTask *task = [NSTask new];
+  task.executableURL = [NSURL fileURLWithPath:@"/usr/bin/python3"];
+  task.arguments = @[helper, app];
+  NSPipe *pipe = [NSPipe pipe];
+  task.standardOutput = pipe; task.standardError = pipe;
+  NSError *why;
+  if (![task launchAndReturnError:&why]) { *error = why.localizedDescription; return NO; }
+  NSData *output = [pipe.fileHandleForReading readDataToEndOfFile];
+  [task waitUntilExit];
+  NSString *message = [[NSString alloc] initWithData:output encoding:NSUTF8StringEncoding] ?: @"";
+  if (task.terminationStatus) {
+    *error = [NSString stringWithFormat:@"%@ failed: %@", name, message];
+    return NO;
+  }
+  fprintf(stderr, "[simrund] %s completed for %s\n", name.UTF8String, app.lastPathComponent.UTF8String);
+  return YES;
+}
 
 // ---------------------------------------------------------------- Mach-O
 static BOOL IsMachO(NSString *path) {
@@ -178,6 +207,10 @@ static NSString *CacheDirectory(NSString *app) {
   unsigned char md[CC_SHA256_DIGEST_LENGTH];
   NSData *path = [app dataUsingEncoding:NSUTF8StringEncoding];
   CC_SHA256(path.bytes, (CC_LONG)path.length, md);
+  const char *override = getenv("SIMRUN_DEVICE_CACHE");
+  if (override && *override)
+    return [@(override) stringByAppendingFormat:@"/%@-%02x%02x%02x%02x", app.lastPathComponent.stringByDeletingPathExtension,
+                                               md[0], md[1], md[2], md[3]];
   NSString *caches = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
   return [caches stringByAppendingFormat:@"/%@/DeviceBuilds/%@-%02x%02x%02x%02x", NSBundle.mainBundle.bundleIdentifier ?: @"dev.simrun.SimRun",
                                          app.lastPathComponent.stringByDeletingPathExtension, md[0], md[1], md[2], md[3]];
@@ -229,6 +262,7 @@ static NSString *CacheDirectory(NSString *app) {
 
   // one walk: drop the device signatures, convert Info.plists and Mach-Os, and note what to sign
   NSMutableArray<NSString *> *machOs = [NSMutableArray array], *bundles = [NSMutableArray arrayWithObject:out];
+  BOOL hasMetalLibraries = NO;
   NSDirectoryEnumerator *e = [fm enumeratorAtPath:out];
   for (NSString *rel in e) {
     NSString *path = [out stringByAppendingPathComponent:rel], *name = rel.lastPathComponent;
@@ -239,6 +273,7 @@ static NSString *CacheDirectory(NSString *app) {
       continue;
     }
     if (![e.fileAttributes.fileType isEqualToString:NSFileTypeRegular]) continue;
+    if ([name.pathExtension isEqualToString:@"metallib"]) hasMetalLibraries = YES;
     if ([name isEqualToString:@"embedded.mobileprovision"]) { [fm removeItemAtPath:path error:nil]; continue; }
     if ([name isEqualToString:@"Info.plist"]) { ConvertInfoPlist(path); continue; }
     if (!IsMachO(path)) continue;
@@ -246,6 +281,8 @@ static NSString *CacheDirectory(NSString *app) {
     [machOs addObject:path];
   }
   removexattr(out.fileSystemRepresentation, "com.apple.quarantine", XATTR_NOFOLLOW);
+  if (!RunConversionHelper(@"preserve-simulator-entitlements.py", out, error)) return nil;
+  if (hasMetalLibraries && !RunConversionHelper(@"convert-metallib.py", out, error)) return nil;
 
   // Sign the loose code first (bundles sign their own executable), then the bundles from the deepest up: a bundle's
   // seal covers what it contains. Bundles at one depth don't contain each other, so those sign in parallel.
